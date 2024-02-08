@@ -74,10 +74,7 @@ do
         trace.filter = @
 
         traceResult = TraceLine( trace )
-        unless traceResult.Hit
-            return false
-
-        if @EyeAngles![ 1 ] < 80
+        if not traceResult.Hit or @EyeAngles![ 1 ] < 80
             return false
 
 do
