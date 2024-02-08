@@ -1,6 +1,9 @@
 addonName = "Ground Sitting"
 
 PLAYER, ENTITY = FindMetaTable( "Player" ), FindMetaTable( "Entity" )
+:GetMoveType, :IsOnGround = ENTITY
+MOVETYPE_WALK = MOVETYPE_WALK
+:Alive, :InVehicle = PLAYER
 
 isSittingOnGround = nil
 do
@@ -14,35 +17,26 @@ do
 
 do
 
-    :GetButtons, :SetButtons, :SetSideSpeed, :SetForwardSpeed, :SetUpSpeed = FindMetaTable( "CMoveData" )
-    :GetMoveType, :IsOnGround = ENTITY
-    :Alive, :InVehicle = PLAYER
-    :bor, :band, :bxor = bit
-
-    MOVETYPE_WALK = MOVETYPE_WALK
+    :KeyDown, :AddKey, :ClearMovement = FindMetaTable( "CUserCmd" )
     IN_SPEED = IN_SPEED
-    IN_JUMP = IN_JUMP
     IN_DUCK = IN_DUCK
 
-    IN_DUCK_WITH_JUMP = bor( IN_JUMP, IN_DUCK )
-
-    hook.Add "SetupMove", addonName, ( mv ) =>
+    hook.Add "StartCommand", addonName, ( cmd ) =>
         unless isSittingOnGround( @ )
             return
 
-        if SERVER and ( not Alive( @ ) or GetMoveType( @ ) ~= MOVETYPE_WALK or InVehicle( @ ) or not IsOnGround( @ ) )
+        if SERVER and ( not Alive( @ ) or not IsOnGround( @ ) or GetMoveType( @ ) ~= MOVETYPE_WALK or InVehicle( @ ) )
             @RequestSittingOnGround( false )
             return
 
-        buttons = GetButtons( mv )
-        if band( buttons, IN_DUCK ) == IN_DUCK
-            buttons = bxor( bor( buttons, IN_SPEED ), IN_SPEED )
-        else
-            SetForwardSpeed( mv, 0 )
-            SetSideSpeed( mv, 0 )
-            SetUpSpeed( mv, 0 )
+        if KeyDown( cmd, IN_DUCK )
+            if KeyDown( cmd, IN_SPEED )
+                cmd\RemoveKey( IN_SPEED )
 
-        SetButtons( mv, bxor( bor( buttons, IN_DUCK_WITH_JUMP ), IN_JUMP ) )
+            return
+
+        AddKey( cmd, IN_DUCK )
+        ClearMovement( cmd )
 
 do
 
@@ -57,51 +51,62 @@ do
 unless SERVER
     return
 
-do
+hook.Add "CanPlayerGroundSit", addonName, ( reqested ) =>
+    unless reqested
+        return
 
-    :TraceLine = util
-    trace = {}
+    unless Alive( @ ) and IsOnGround( @ )
+        return false
 
-    hook.Add "PlayerGroundSit", addonName, ( reqested ) =>
-        unless reqested
-            return
+    if GetMoveType( @ ) ~= MOVETYPE_WALK or InVehicle( @ )
+        return false
 
-        unless @Crouching! and @IsOnGround!
-            return false
-
-        trace.start = @GetShootPos!
-        trace.endpos = trace.start + @GetAimVector! * 72
-        trace.filter = @
-
-        traceResult = TraceLine( trace )
-        if not traceResult.Hit or @EyeAngles![ 1 ] < 80
-            return false
-
+requestSittingOnGround = nil
 do
 
     :Call = hook
 
-    PLAYER.RequestSittingOnGround = ( reqested, force ) =>
-        if isSittingOnGround( @ ) == reqested
-            return false
-
-        if not force and Call( "PlayerGroundSit", nil, @, reqested ) == false
+    requestSittingOnGround = ( reqested, force ) =>
+        if isSittingOnGround( @ ) == reqested or ( not force and Call( "CanPlayerGroundSit", nil, @, reqested ) == false )
             return false
 
         @SetNW2Bool( addonName, reqested )
-        @m_bNextGroundSit = CurTime! + 1
+        Call( "PlayerGroundSit", nil, @, reqested )
         return true
 
-hook.Add "KeyPress", addonName, ( key ) =>
-    switch key
-        when IN_USE
-            @RequestSittingOnGround( true )
+    PLAYER.RequestSittingOnGround = requestSittingOnGround
 
-        when IN_JUMP
-            @RequestSittingOnGround( false )
+do
+
+    :TraceLine = util
+    IN_WALK = IN_WALK
+    IN_JUMP = IN_JUMP
+    IN_USE = IN_USE
+    trace = {}
+
+    hook.Add "KeyPress", addonName, ( key ) =>
+        switch key
+            when IN_USE
+                unless @KeyDown( IN_WALK ) and @Crouching!
+                    return
+
+                trace.start = @GetShootPos!
+                trace.endpos = trace.start + @GetAimVector! * 72
+                trace.filter = @
+
+                if not TraceLine( trace ).Hit or @EyeAngles![ 1 ] < 80
+                    return false
+
+                requestSittingOnGround( @, true )
+
+            when IN_JUMP
+                requestSittingOnGround( @, false )
+
+hook.Add "PlayerGroundSit", addonName, ( isEntered ) =>
+    @m_bNextGroundSit = CurTime! + ( isEntered and 0.5 or 1 )
 
 concommand.Add "ground_sit", =>
     if ( @m_bNextGroundSit or 0 ) > CurTime!
         return
 
-    @RequestSittingOnGround( not isSittingOnGround( @ ) )
+    requestSittingOnGround( @, not isSittingOnGround( @ ) )
