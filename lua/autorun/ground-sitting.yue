@@ -4,6 +4,7 @@ PLAYER, ENTITY = FindMetaTable( "Player" ), FindMetaTable( "Entity" )
 :GetMoveType, :IsOnGround = ENTITY
 MOVETYPE_WALK = MOVETYPE_WALK
 :Alive, :InVehicle = PLAYER
+SERVER = SERVER
 
 isSittingOnGround = nil
 do
