@@ -18,7 +18,9 @@ do
 
 do
 
-    :KeyDown, :AddKey, :ClearMovement = FindMetaTable( "CUserCmd" )
+    mp_sitting_on_ground_attack = CreateConVar( "mp_sitting_on_ground_attack", "0", bit.bor( FCVAR_REPLICATED, FCVAR_NOTIFY, FCVAR_ARCHIVE ), "Allows players to attack while sitting on the ground.", 0, 1 )
+    :KeyDown, :AddKey, :RemoveKey, :ClearMovement = FindMetaTable( "CUserCmd" )
+    IN_ATTACK, IN_ATTACK2 = IN_ATTACK, IN_ATTACK2
     IN_SPEED = IN_SPEED
     IN_DUCK = IN_DUCK
 
@@ -32,9 +34,15 @@ do
 
         if KeyDown( cmd, IN_DUCK )
             if KeyDown( cmd, IN_SPEED )
-                cmd\RemoveKey( IN_SPEED )
+                RemoveKey( cmd, IN_SPEED )
 
             return
+
+        if KeyDown( cmd, IN_ATTACK ) and not mp_sitting_on_ground_attack\GetBool!
+            RemoveKey( cmd, IN_ATTACK )
+
+        if KeyDown( cmd, IN_ATTACK2 ) and not mp_sitting_on_ground_attack\GetBool!
+            RemoveKey( cmd, IN_ATTACK2 )
 
         AddKey( cmd, IN_DUCK )
         ClearMovement( cmd )
