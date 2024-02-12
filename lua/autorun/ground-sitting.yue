@@ -5,6 +5,7 @@ PLAYER, ENTITY = FindMetaTable( "Player" ), FindMetaTable( "Entity" )
 MOVETYPE_WALK = MOVETYPE_WALK
 :Alive, :InVehicle = PLAYER
 SERVER = SERVER
+:Add = hook
 
 isSittingOnGround = nil
 do
@@ -24,7 +25,7 @@ do
     IN_SPEED = IN_SPEED
     IN_DUCK = IN_DUCK
 
-    hook.Add "StartCommand", addonName, ( cmd ) =>
+    Add "StartCommand", addonName, ( cmd ) =>
         unless isSittingOnGround( @ )
             return
 
@@ -53,14 +54,14 @@ do
     ACT_HL2MP_IDLE = ACT_HL2MP_IDLE
     :LookupSequence = ENTITY
 
-    hook.Add "CalcMainActivity", addonName, ( velocity ) =>
+    Add "CalcMainActivity", addonName, ( velocity ) =>
         if isSittingOnGround( @ ) and Length2DSqr( velocity ) < 1
             return ACT_HL2MP_IDLE, LookupSequence( @, "pose_ducking_02" )
 
 unless SERVER
     return
 
-hook.Add "CanPlayerGroundSit", addonName, ( reqested ) =>
+Add "CanPlayerGroundSit", addonName, ( reqested ) =>
     unless reqested
         return
 
@@ -93,7 +94,7 @@ do
     IN_USE = IN_USE
     trace = {}
 
-    hook.Add "KeyPress", addonName, ( key ) =>
+    Add "KeyPress", addonName, ( key ) =>
         switch key
             when IN_USE
                 unless @KeyDown( IN_WALK ) and @Crouching!
@@ -111,7 +112,11 @@ do
             when IN_JUMP
                 requestSittingOnGround( @, false )
 
-hook.Add "PlayerGroundSit", addonName, ( isEntered ) =>
+Add "PlayerShouldTaunt", addonName, =>
+    if isSittingOnGround( @ )
+        return false
+
+Add "PlayerGroundSit", addonName, ( isEntered ) =>
     @m_bNextGroundSit = CurTime! + ( isEntered and 0.5 or 1 )
 
 concommand.Add "ground_sit", =>
