@@ -50,6 +50,7 @@ do
 
         AddKey( cmd, IN_DUCK )
         ClearMovement( cmd )
+        return
 
 do
 
@@ -110,9 +111,11 @@ do
                     return false
 
                 requestSittingOnGround( @, true )
+                return
 
             when IN_JUMP
                 requestSittingOnGround( @, false )
+                return
 
 Add "PlayerShouldTaunt", addonName, =>
     if isSittingOnGround( @ )
