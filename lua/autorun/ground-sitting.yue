@@ -1,6 +1,7 @@
 addonName = "Ground Sitting"
 
 PLAYER, ENTITY = FindMetaTable( "Player" ), FindMetaTable( "Entity" )
+:Length2DSqr = FindMetaTable( "Vector" )
 :GetMoveType, :IsOnGround = ENTITY
 MOVETYPE_WALK = MOVETYPE_WALK
 :Alive, :InVehicle = PLAYER
@@ -22,6 +23,7 @@ do
     mp_sitting_on_ground_attack = CreateConVar( "mp_sitting_on_ground_attack", "0", bit.bor( FCVAR_REPLICATED, FCVAR_NOTIFY, FCVAR_ARCHIVE ), "Allows players to attack while sitting on the ground.", 0, 1 )
     :KeyDown, :AddKey, :RemoveKey, :ClearMovement = FindMetaTable( "CUserCmd" )
     IN_ATTACK, IN_ATTACK2 = IN_ATTACK, IN_ATTACK2
+    :GetVelocity = ENTITY
     IN_SPEED = IN_SPEED
     IN_DUCK = IN_DUCK
 
@@ -33,24 +35,24 @@ do
             @RequestSittingOnGround( false )
             return
 
+        if Length2DSqr( GetVelocity( @ ) ) < 1
+            if KeyDown( cmd, IN_ATTACK ) and not mp_sitting_on_ground_attack\GetBool!
+                RemoveKey( cmd, IN_ATTACK )
+
+            if KeyDown( cmd, IN_ATTACK2 ) and not mp_sitting_on_ground_attack\GetBool!
+                RemoveKey( cmd, IN_ATTACK2 )
+
         if KeyDown( cmd, IN_DUCK )
             if KeyDown( cmd, IN_SPEED )
                 RemoveKey( cmd, IN_SPEED )
 
             return
 
-        if KeyDown( cmd, IN_ATTACK ) and not mp_sitting_on_ground_attack\GetBool!
-            RemoveKey( cmd, IN_ATTACK )
-
-        if KeyDown( cmd, IN_ATTACK2 ) and not mp_sitting_on_ground_attack\GetBool!
-            RemoveKey( cmd, IN_ATTACK2 )
-
         AddKey( cmd, IN_DUCK )
         ClearMovement( cmd )
 
 do
 
-    :Length2DSqr = FindMetaTable( "Vector" )
     ACT_HL2MP_IDLE = ACT_HL2MP_IDLE
     :LookupSequence = ENTITY
 
