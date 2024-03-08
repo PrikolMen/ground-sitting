@@ -95,7 +95,9 @@ do
     IN_WALK = IN_WALK
     IN_JUMP = IN_JUMP
     IN_USE = IN_USE
-    trace = {}
+
+    traceResult = {}
+    trace = { output: traceResult }
 
     Add "KeyPress", addonName, ( key ) =>
         switch key
@@ -106,8 +108,9 @@ do
                 trace.start = @GetShootPos!
                 trace.endpos = trace.start + @GetAimVector! * 72
                 trace.filter = @
+                TraceLine( trace )
 
-                if not TraceLine( trace ).Hit or @EyeAngles![ 1 ] < 80
+                if not traceResult.Hit or @EyeAngles![ 1 ] < 80
                     return false
 
                 requestSittingOnGround( @, true )
